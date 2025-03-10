@@ -49,6 +49,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     User: {user_message}
                 """)
                 reply = response.text.strip()
+
             except Exception as e:
                 if '429' in str(e):
                     print("Gemini bị lỗi quota, chuyển sang Mistral...")
@@ -88,22 +89,33 @@ app = Flask(__name__)
 def home():
     return "Bot is running!"
 
+# Chạy Flask trong luồng riêng
 def run_flask():
     port = int(os.getenv('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, use_reloader=False)
 
 # Chạy bot Telegram
 def main():
-    # Chạy Flask trong luồng riêng
+    # Chạy Flask trong luồng riêng để tránh Render tự động tắt dịch vụ
     Thread(target=run_flask).start()
 
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Bot đang chạy...")
-    app.run_polling()
+
+    # Tự động khởi động lại khi bị Conflict hoặc lỗi
+    while True:
+        try:
+            app.run_polling()
+        except Exception as e:
+            if 'Conflict' in str(e):
+                print("Bot bị conflict, khởi động lại polling...")
+                continue
+            else:
+                print(f"Lỗi polling: {e}")
+                continue
 
 if __name__ == '__main__':
     main()
