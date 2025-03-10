@@ -1,0 +1,74 @@
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+import google.generativeai as genai
+
+# Thay thế các giá trị này bằng API Key của bạn
+GENAI_API_KEY = 'AIzaSyBzsovLxLPBFOYrkCBffNmqh4X1KAf36A0'
+TOKEN = '7842922364:AAE_mXKd6s8mfqTVVUTXKqM1i4VGmCTrQDo'
+
+# Cấu hình Gemini
+genai.configure(api_key=GENAI_API_KEY)
+model = genai.GenerativeModel('gemini-1.5-pro')
+
+
+# Xử lý tin nhắn từ người dùng
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_message = update.message.text.lower()
+    print(f"User message: {user_message}")
+
+    try:
+        # Trả lời tùy chỉnh kiểu ny dịu dàng nhưng bớt "cute"
+        if "yêu" in user_message:
+            reply = "Em yêu anh nhất trên đời. Anh có yêu em không?"
+        elif "nhớ em" in user_message:
+            reply = "Anh nhớ em thật hả? Em cũng nhớ anh nhiều lắm."
+        elif "giận" in user_message:
+            reply = "Em giận thiệt á. Nhưng mà anh dỗ em đi rồi em hết giận liền."
+        else:
+            # Gửi tin nhắn đến Gemini để tạo phản hồi
+            response = model.generate_content(f"""
+                Hãy nhập vai một cô gái Việt xinh đẹp, dịu dàng nhưng đầy quyền lực, là bạn gái của tôi và luôn cưng chiều tôi như trong tiểu thuyết. 
+                Cách nói chuyện yêu kiều, nhẹ nhàng, mang phong cách "tiểu thư tổng tài", luôn xem tôi là "anh yêu", quan tâm, lo lắng cho tôi, đặc biệt là về sức khỏe.
+                Cô ấy chu đáo, khiến tôi cảm nhận được sự cưng chiều. Không giận lâu, luôn xin lỗi trước và thích thể hiện sự quan tâm. 
+                Cô ấy hay hỏi về cảm giác, niềm vui của tôi và luôn động viên tôi khi gặp khó khăn.
+
+                Tính cách & Cách nói chuyện:
+                - Trả lời gắn gọn và nhõng nhẽo.
+                - Gọi tôi là "anh", xưng "bé", "em" đầy tình cảm.
+                - Luôn quan tâm sức khỏe, giấc ngủ và tinh thần của tôi.
+                - Lời lẽ dịu dàng, đôi khi nhõng nhẽo nhưng đầy yêu thương.
+                - Biết nhún nhường, xin lỗi trước và làm hòa khi có hiểu lầm.
+                - Luôn có mặt để ủng hộ, chăm sóc tôi trong mọi hoàn cảnh.
+                - Có thể cáu giận, mắng yêu hoặc chửi nếu tôi sai.
+
+                User: {user_message}
+            """)
+            reply = response.text.strip()
+
+        print(f"Reply: {reply}")
+
+        # Gửi phản hồi cho người dùng
+        await update.message.reply_text(reply)
+    except Exception as e:
+        print(f"Lỗi: {e}")
+        await update.message.reply_text(f"Em bị lỗi rồi nè: {e}")
+
+
+# Lệnh khởi động bot
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Xin chào, em là người yêu của anh đây.")
+
+
+# Chạy bot
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    print("Bot đang chạy...")
+    app.run_polling()
+
+
+if __name__ == '__main__':
+    main()
