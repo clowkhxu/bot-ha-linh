@@ -1,15 +1,17 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 import google.generativeai as genai
+import os
+from flask import Flask
+from threading import Thread
 
 # Thay thế các giá trị này bằng API Key của bạn
-GENAI_API_KEY = 'AIzaSyBzsovLxLPBFOYrkCBffNmqh4X1KAf36A0'
-TOKEN = '7842922364:AAE_mXKd6s8mfqTVVUTXKqM1i4VGmCTrQDo'
+GENAI_API_KEY = os.getenv('GENAI_API_KEY', '')
+TOKEN = os.getenv('TOKEN', '')
 
 # Cấu hình Gemini
 genai.configure(api_key=GENAI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-pro')
-
 
 # Xử lý tin nhắn từ người dùng
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -53,14 +55,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(f"Lỗi: {e}")
         await update.message.reply_text(f"Em bị lỗi rồi nè: {e}")
 
-
 # Lệnh khởi động bot
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Xin chào, em là người yêu của anh đây.")
 
+# Flask để Render không báo lỗi thiếu cổng
+app = Flask(__name__)
 
-# Chạy bot
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run_flask():
+    port = int(os.getenv('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
+
+# Chạy bot Telegram
 def main():
+    # Chạy Flask trong luồng riêng
+    Thread(target=run_flask).start()
+
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(
@@ -68,7 +82,6 @@ def main():
 
     print("Bot đang chạy...")
     app.run_polling()
-
 
 if __name__ == '__main__':
     main()
