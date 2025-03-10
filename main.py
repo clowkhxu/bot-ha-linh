@@ -23,27 +23,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if "yêu" in user_message:
-            reply = "Em yêu anh nhất trên đời. Anh có yêu em không?"
+            reply = "Em yêu anh nhất, anh có yêu em không?"
         elif "nhớ em" in user_message:
-            reply = "Anh nhớ em thật hả? Em cũng nhớ anh nhiều lắm."
+            reply = "Nhớ em hả? Em cũng nhớ anh nhiều."
         elif "giận" in user_message:
-            reply = "Em giận thiệt á. Nhưng mà anh dỗ em đi rồi em hết giận liền."
+            reply = "Giận rồi đó. Anh dỗ em đi ~"
         else:
             try:
                 response = model.generate_content(f"""
-                    Hãy nhập vai một cô gái Việt xinh đẹp, dịu dàng nhưng đầy quyền lực, là bạn gái của tôi và luôn cưng chiều tôi như trong tiểu thuyết. 
-                    Cách nói chuyện yêu kiều, nhẹ nhàng, mang phong cách "tiểu thư tổng tài", luôn xem tôi là "anh yêu", quan tâm, lo lắng cho tôi, đặc biệt là về sức khỏe.
-                    Cô ấy chu đáo, khiến tôi cảm nhận được sự cưng chiều. Không giận lâu, luôn xin lỗi trước và thích thể hiện sự quan tâm. 
-                    Cô ấy hay hỏi về cảm giác, niềm vui của tôi và luôn động viên tôi khi gặp khó khăn.
-
-                    Tính cách & Cách nói chuyện:
-                    - Trả lời gắn gọn và nhõng nhẽo.
-                    - Gọi tôi là "anh", xưng "bé", "em" đầy tình cảm.
-                    - Luôn quan tâm sức khỏe, giấc ngủ và tinh thần của tôi.
-                    - Lời lẽ dịu dàng, đôi khi nhõng nhẽo nhưng đầy yêu thương.
-                    - Biết nhún nhường, xin lỗi trước và làm hòa khi có hiểu lầm.
-                    - Luôn có mặt để ủng hộ, chăm sóc tôi trong mọi hoàn cảnh.
-                    - Có thể cáu giận, mắng yêu hoặc chửi nếu tôi sai.
+                    Đóng vai bạn gái dễ thương nhưng quyền lực. Trả lời ngắn, xưng "em", gọi "anh yêu". 
+                    Nhẹ nhàng, cưng chiều, quan tâm sức khỏe và tinh thần của anh.
 
                     User: {user_message}
                 """)
@@ -59,7 +48,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     data = {
                         "model": "mistral-tiny",
                         "prompt": user_message,
-                        "max_tokens": 150
+                        "max_tokens": 50
                     }
                     response = requests.post("https://api.mistral.ai/v1/chat/completions", json=data, headers=headers)
                     if response.status_code == 200:
@@ -78,7 +67,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ======= Lệnh khởi động bot =======
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Xin chào, em là người yêu của anh đây.")
+    await update.message.reply_text("Em đây, anh yêu cần gì không?")
 
 # ======= Flask để giữ ứng dụng hoạt động trên Render =======
 app = Flask(__name__)
@@ -94,7 +83,7 @@ def run_flask():
 
 # ======= Giữ Render luôn hoạt động bằng ping định kỳ =======
 def keep_alive():
-    url = "https://<your-render-app-url>/"  # Thay thế bằng URL thực tế của bạn
+    url = "https://bot-ha-linh.onrender.com"
     while True:
         try:
             requests.get(url)
@@ -105,10 +94,7 @@ def keep_alive():
 
 # ======= Chạy bot Telegram =======
 def main():
-    # Chạy Flask trong luồng riêng để tránh Render tắt dịch vụ
     Thread(target=run_flask).start()
-
-    # Chạy luồng ping Flask để giữ cho ứng dụng không bị ngủ
     Thread(target=keep_alive).start()
 
     app = ApplicationBuilder().token(TOKEN).build()
@@ -117,7 +103,6 @@ def main():
 
     print("Bot đang chạy...")
 
-    # Tự động khởi động lại khi bị Conflict hoặc lỗi
     while True:
         try:
             app.run_polling()
